@@ -1,0 +1,229 @@
+{
+  "balance": 59.88,
+  "initial_balance": 60.0,
+  "closed_trades": [
+    {
+      "id": "79b9e0a1",
+      "symbol": "NVDAXUSD",
+      "side": "BUY",
+      "contracts": 10,
+      "entry_price": 220.0,
+      "exit_price": 219.9,
+      "realized_pnl": -0.01,
+      "return_pct": -0.18,
+      "close_reason": "BREAKEVEN_STOP",
+      "opened_at": "2026-09-10T06:38:52.542244+00:00",
+      "closed_at": "2026-09-10T06:38:52.542937+00:00",
+      "balance_after": 59.99
+    },
+    {
+      "id": "78489a6f",
+      "symbol": "NVDAXUSD",
+      "side": "BUY",
+      "contracts": 10,
+      "entry_price": 220.0,
+      "exit_price": 219.9,
+      "realized_pnl": -0.01,
+      "return_pct": -0.18,
+      "close_reason": "BREAKEVEN_STOP",
+      "opened_at": "2026-09-10T07:02:06.294128+00:00",
+      "closed_at": "2026-09-10T07:02:06.294686+00:00",
+      "balance_after": 59.98
+    },
+    {
+      "id": "86b12a61",
+      "symbol": "NVDAXUSD",
+      "side": "BUY",
+      "contracts": 10,
+      "entry_price": 220.0,
+      "exit_price": 219.9,
+      "realized_pnl": -0.01,
+      "return_pct": -0.18,
+      "close_reason": "BREAKEVEN_STOP",
+      "opened_at": "2026-09-10T07:04:14.428896+00:00",
+      "closed_at": "2026-09-10T07:04:14.429451+00:00",
+      "balance_after": 59.97
+    },
+    {
+      "id": "f55eca49",
+      "symbol": "NVDAXUSD",
+      "side": "BUY",
+      "contracts": 10,
+      "entry_price": 220.0,
+      "exit_price": 219.9,
+      "realized_pnl": -0.01,
+      "return_pct": -0.18,
+      "close_reason": "BREAKEVEN_STOP",
+      "opened_at": "2026-09-10T07:11:48.151536+00:00",
+      "closed_at": "2026-09-10T07:11:48.152137+00:00",
+      "balance_after": 59.96
+    },
+    {
+      "id": "62c6fac8",
+      "symbol": "NVDAXUSD",
+      "side": "BUY",
+      "contracts": 10,
+      "entry_price": 220.0,
+      "exit_price": 219.9,
+      "realized_pnl": -0.01,
+      "return_pct": -0.18,
+      "close_reason": "BREAKEVEN_STOP",
+      "opened_at": "2026-09-10T07:35:18.597476+00:00",
+      "closed_at": "2026-09-10T07:35:18.598068+00:00",
+      "balance_after": 59.95
+    },
+    {
+      "id": "f65a51e6",
+      "symbol": "NVDAXUSD",
+      "side": "BUY",
+      "contracts": 10,
+      "entry_price": 220.0,
+      "exit_price": 219.9,
+      "realized_pnl": -0.01,
+      "return_pct": -0.18,
+      "close_reason": "BREAKEVEN_STOP",
+      "opened_at": "2026-09-10T07:36:22.250006+00:00",
+      "closed_at": "2026-09-10T07:36:22.250735+00:00",
+      "balance_after": 59.94
+    },
+    {
+      "id": "b075d02e",
+      "symbol": "NVDAXUSD",
+      "side": "BUY",
+      "contracts": 10,
+      "entry_price": 220.0,
+      "exit_price": 219.9,
+      "realized_pnl": -0.01,
+      "return_pct": -0.18,
+      "close_reason": "BREAKEVEN_STOP",
+      "opened_at": "2026-09-10T07:37:08.714192+00:00",
+      "closed_at": "2026-09-10T07:37:08.714773+00:00",
+      "balance_after": 59.93
+    },
+    {
+      "id": "44a78113",
+      "symbol": "NVDAXUSD",
+      "side": "BUY",
+      "contracts": 10,
+      "entry_price": 220.0,
+      "exit_price": 219.9,
+      "realized_pnl": -0.01,
+      "return_pct": -0.18,
+      "close_reason": "BREAKEVEN_STOP",
+      "opened_at": "2026-09-10T07:46:52.929742+00:00",
+      "closed_at": "2026-09-10T07:46:52.930341+00:00",
+      "balance_after": 59.92
+    },
+    {
+      "id": "e2dad041",
+      "symbol": "NVDAXUSD",
+      "side": "BUY",
+      "contracts": 10,
+      "entry_price": 220.0,
+      "exit_price": 219.9,
+      "realized_pnl": -0.01,
+      "return_pct": -0.18,
+      "close_reason": "BREAKEVEN_STOP",
+      "opened_at": "2026-09-10T08:36:00.518336+00:00",
+      "closed_at": "2026-09-10T08:36:00.518977+00:00",
+      "balance_after": 59.91
+    },
+    {
+      "id": "e4ca18b9",
+      "symbol": "NVDAXUSD",
+      "side": "BUY",
+      "contracts": 10,
+      "entry_price": 220.0,
+      "exit_price": 219.9,
+      "realized_pnl": -0.01,
+      "return_pct": -0.18,
+      "close_reason": "BREAKEVEN_STOP",
+      "opened_at": "2026-09-10T08:50:37.382368+00:00",
+      "closed_at": "2026-09-10T08:50:37.383016+00:00",
+      "balance_after": 59.9
+    },
+    {
+      "id": "e65d0fc8",
+      "symbol": "NVDAXUSD",
+      "side": "BUY",
+      "contracts": 10,
+      "entry_price": 220.0,
+      "exit_price": 219.9,
+      "realized_pnl": -0.01,
+      "return_pct": -0.18,
+      "close_reason": "BREAKEVEN_STOP",
+      "opened_at": "2026-09-10T08:53:43.327305+00:00",
+      "closed_at": "2026-09-10T08:53:43.328001+00:00",
+      "balance_after": 59.89
+    },
+    {
+      "id": "98f325df",
+      "symbol": "NVDAXUSD",
+      "side": "BUY",
+      "contracts": 10,
+      "entry_price": 220.0,
+      "exit_price": 219.9,
+      "realized_pnl": -0.01,
+      "return_pct": -0.18,
+      "close_reason": "BREAKEVEN_STOP",
+      "opened_at": "2026-09-10T08:54:44.251575+00:00",
+      "closed_at": "2026-09-10T08:54:44.252275+00:00",
+      "balance_after": 59.88
+    }
+  ],
+  "open_positions": {},
+  "equity_curve": [
+    {
+      "timestamp": "2026-09-10T06:38:52.542179+00:00",
+      "balance": 60.0
+    },
+    {
+      "timestamp": "2026-09-10T06:38:52.542937+00:00",
+      "balance": 59.99
+    },
+    {
+      "timestamp": "2026-09-10T07:02:06.294686+00:00",
+      "balance": 59.98
+    },
+    {
+      "timestamp": "2026-09-10T07:04:14.429451+00:00",
+      "balance": 59.97
+    },
+    {
+      "timestamp": "2026-09-10T07:11:48.152137+00:00",
+      "balance": 59.96
+    },
+    {
+      "timestamp": "2026-09-10T07:35:18.598068+00:00",
+      "balance": 59.95
+    },
+    {
+      "timestamp": "2026-09-10T07:36:22.250735+00:00",
+      "balance": 59.94
+    },
+    {
+      "timestamp": "2026-09-10T07:37:08.714773+00:00",
+      "balance": 59.93
+    },
+    {
+      "timestamp": "2026-09-10T07:46:52.930341+00:00",
+      "balance": 59.92
+    },
+    {
+      "timestamp": "2026-09-10T08:36:00.518977+00:00",
+      "balance": 59.91
+    },
+    {
+      "timestamp": "2026-09-10T08:50:37.383016+00:00",
+      "balance": 59.9
+    },
+    {
+      "timestamp": "2026-09-10T08:53:43.328001+00:00",
+      "balance": 59.89
+    },
+    {
+      "timestamp": "2026-09-10T08:54:44.252275+00:00",
+      "balance": 59.88
+    }
+  ]
+}

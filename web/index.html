@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Delta Exchange US Stocks RWA | Multi-Agent Compounding Engine</title>
+  <meta name="description" content="Autonomous multi-agent algorithmic trading setup for tokenized US equities on Delta Exchange compounding $60 into $5,000 with mandatory source validation and micro-contract risk control.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Navigation / Header -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo-badge">
+          <span class="pulse-dot"></span>
+          <span class="logo-title">DELTA RWA</span>
+          <span class="logo-tag">EQUITIES ENGINE</span>
+        </div>
+        <div class="target-summary">
+          <span class="target-label">COMPOUNDING ROADMAP:</span>
+          <span class="target-val-start">$60.00</span>
+          <span class="target-arrow">➜</span>
+          <span class="target-val-end">$5,000.00</span>
+          <span class="target-gain">(+8,233%)</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="mode-badge" id="modeBadge">SHADOW SIMULATION</div>
+        <button class="btn btn-primary" id="btnScan" onclick="triggerManualScan()">
+          <span class="btn-icon">⚡</span> Run Multi-Agent Scan
+        </button>
+        <button class="btn btn-secondary" id="btnToggleMode" onclick="toggleMode()">
+          Toggle Mode
+        </button>
+        <button class="btn btn-danger" id="btnReset" onclick="resetBankroll()" title="Reset bankroll to $60.00">
+          Reset ($60)
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Milestone & Compounding Progress Bar -->
+    <section class="milestone-card">
+      <div class="milestone-header">
+        <div class="milestone-info">
+          <span class="badge-stage" id="currentStageBadge">STAGE 1: BASE BUILDING ($60 ➜ $200)</span>
+          <h1 class="balance-display">$<span id="accountBalance">60.00</span> <span class="balance-currency">USD</span></h1>
+          <span class="pnl-tag" id="netPnlTag">+$0.00 (0.0%)</span>
+        </div>
+        <div class="milestone-stats">
+          <div class="stat-box">
+            <span class="stat-label">WIN RATE</span>
+            <span class="stat-value text-emerald" id="winRateVal">0.0%</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">PROFIT FACTOR</span>
+            <span class="stat-value text-cyan" id="profitFactorVal">1.00</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">TOTAL TRADES</span>
+            <span class="stat-value" id="totalTradesVal">0</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">OPEN TRADES</span>
+            <span class="stat-value text-amber" id="openTradesVal">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Compounding Progress Bar -->
+      <div class="progress-wrapper">
+        <div class="progress-labels">
+          <span>Start: $60</span>
+          <span>Stage 1: $200</span>
+          <span>Stage 2: $1,000</span>
+          <span>Target: $5,000</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressBarFill" style="width: 1%;"></div>
+          <div class="stage-marker" style="left: 2.8%;"></div>
+          <div class="stage-marker" style="left: 19%;"></div>
+        </div>
+        <div class="progress-footer">
+          <span id="progressPctText">0.0% to $5,000 Goal</span>
+          <span class="risk-pill">Max Risk per Trade: 2.5% ($1.50) | 4x Isolated Leverage</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3-Column Command Dashboard -->
+    <div class="dashboard-grid">
+      <!-- Left Column: US Stocks RWA Radar -->
+      <div class="grid-col">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span class="panel-icon">📈</span>
+              <h3>US STOCKS RWA RADAR</h3>
+            </div>
+            <span class="badge-mini">TOKENIZED EQUITIES</span>
+          </div>
+          <div class="radar-list" id="radarList">
+            <!-- Populated dynamically -->
+            <div class="loading-state">Connecting to Delta Exchange feeds...</div>
+          </div>
+        </div>
+
+        <!-- Compounding Calculator Quick Card -->
+        <div class="panel mt-4">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span class="panel-icon">🧮</span>
+              <h3>COMPOUNDING ROADMAP MATH</h3>
+            </div>
+          </div>
+          <div class="calc-box">
+            <p class="calc-desc">Growing $60 into $5,000 using 1:2.5 Risk-to-Reward and 2.5% risk:</p>
+            <div class="calc-grid">
+              <div class="calc-item">
+                <span class="calc-num">44</span>
+                <span class="calc-lbl">Net 1:2.5R Wins</span>
+              </div>
+              <div class="calc-item">
+                <span class="calc-num">58%</span>
+                <span class="calc-lbl">Required Win Rate</span>
+              </div>
+              <div class="calc-item">
+                <span class="calc-num">Zero</span>
+                <span class="calc-lbl">Liquidation Risk</span>
+              </div>
+            </div>
+            <div class="formula-box">
+              <code>Contract Size = (Balance * 2.5%) / (|Entry - SL| * ContractVal)</code>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Middle Column: Live Multi-Agent Deliberation Terminal -->
+      <div class="grid-col col-span-2">
+        <div class="panel h-full">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span class="panel-icon">🤖</span>
+              <h3>MULTI-AGENT CONSENSUS TERMINAL</h3>
+            </div>
+            <div class="dual-key-badge">
+              <span class="key-indicator">MANDATORY DUAL-KEY: GATE 1 (NEWS) + GATE 2 (QUANT)</span>
+            </div>
+          </div>
+
+          <!-- Live Deliberation Transcript Stream -->
+          <div class="terminal-container" id="terminalLogs">
+            <div class="log-entry log-info">
+              <span class="log-time">[00:00:00]</span>
+              <span class="log-agent">[Supervisor]</span>
+              <span class="log-msg">Multi-agent trading system initialized. Dual-key consensus required for all orders.</span>
+            </div>
+          </div>
+
+          <!-- Active Dual-Key Inspection Card -->
+          <div class="active-inspection" id="inspectionCard">
+            <div class="inspection-header">
+              <span class="insp-title">LAST EVALUATION SNAPSHOT: <strong id="inspSymbol">NVDAXUSD</strong></span>
+              <span class="insp-status" id="inspStatus">PASSED</span>
+            </div>
+            <div class="inspection-body">
+              <div class="insp-gate">
+                <div class="gate-header">
+                  <span class="gate-label">GATE 1: SOCIAL & NEWS INTELLIGENCE</span>
+                  <span class="gate-score" id="gate1Score">Usable: +0.73 | Conf: 87%</span>
+                </div>
+                <div class="gate-details">
+                  <div class="source-breakdown">
+                    <span>Tier 1 (SEC/IR): <b id="t1Count">2</b></span>
+                    <span>Tier 2 (News): <b id="t2Count">3</b></span>
+                    <span>Tier 3 (Social): <b id="t3Count">142</b></span>
+                  </div>
+                  <div class="bot-score">
+                    <span>Anti-Bot Authenticity: <strong class="text-emerald" id="authScore">89%</strong></span>
+                    <span class="epistemic-tag" id="epistemicTag">VERIFIED FACT</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="insp-gate">
+                <div class="gate-header">
+                  <span class="gate-label">GATE 2: DUAL-PILLAR QUANT ANALYST & ALPHAS</span>
+                  <span class="gate-score" id="gate2Score">Alpha: +0.62 | Quant Conf: 82%</span>
+                </div>
+                <div class="gate-details">
+                  <div class="source-breakdown">
+                    <span>1H Macro: <b id="macroTrendVal">BULLISH</b></span>
+                    <span>15M Pullback: <b id="pullbackVal">HEALTHY</b></span>
+                    <span>5M Stop: <b id="stopTypeVal">STRUCTURAL PIVOT</b></span>
+                    <span>EMA Trend: <b id="trendVal">BULLISH</b></span>
+                    <span>RSI (14): <b id="rsiVal">54.2</b></span>
+                    <span>ATR (14): <b id="atrVal">$3.40</b></span>
+                    <span>PV Corr: <b id="pvCorrVal">+0.48</b></span>
+                    <span>KMID2 Body: <b id="kmid2Val">+0.32</b></span>
+                    <span>ROC Comp: <b id="rocCompVal">+1.4%</b></span>
+                    <span>Micro-Drift: <b id="microDriftVal">+0.18</b></span>
+                    <span>5L Depth Imb: <b id="depthImbVal">+32%</b></span>
+                    <span>Orderbook Imb: <b id="obImbalance">+24%</b></span>
+                  </div>
+                  <div class="bot-score">
+                    <span>Stop-Loss: <strong id="slVal">$219.34</strong></span>
+                    <span>Take-Profit: <strong id="tpVal">$238.70</strong></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Gate 2.5: Self-Improving Pre-Flight Gate -->
+              <div class="insp-gate" id="gateForensic">
+                <div class="gate-header">
+                  <span class="gate-label">AGENT 5: SELF-IMPROVING PRE-FLIGHT GATE</span>
+                  <span class="gate-score text-emerald" id="gateForensicScore">Learned Rules Checked | 0 Collisions</span>
+                </div>
+                <div class="gate-details">
+                  <div class="source-breakdown">
+                    <span>Quarantine Status: <b id="inspQuarantineStatus" class="text-emerald">CLEAR</b></span>
+                    <span>Confidence Hurdle: <b id="inspHurdle">65%</b></span>
+                    <span>Adaptive ATR Multiplier: <b id="inspAdaptiveAtr">1.50x</b></span>
+                  </div>
+                  <div class="bot-score">
+                    <span>Anti-Pattern Check: <strong class="text-emerald" id="inspAntiPatternStatus">APPROVED (NO MISTAKE MATCH)</strong></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Self-Improving Brain & Loss Autopsy Panel -->
+    <section class="panel mb-4" id="forensicMemoryPanel" style="margin-bottom: 24px;">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span class="panel-icon">🧠</span>
+          <h3>AGENT 5: SELF-IMPROVING BRAIN & LOSS AUTOPSY</h3>
+          <span class="badge-mini text-emerald" id="preventedMistakesBadge" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); padding: 4px 10px; border-radius: 999px;">0 Repeated Mistakes Avoided</span>
+        </div>
+        <div class="header-right-badges">
+          <span class="badge-tag">PERSISTENT ANTI-PATTERN MEMORY</span>
+        </div>
+      </div>
+      <div class="forensic-grid">
+        <div class="forensic-stat-card">
+          <span class="stat-label">AUTOPSIES ANALYZED</span>
+          <span class="stat-value text-purple" id="totalAutopsiesVal">0</span>
+          <span class="stat-subtext">Automated Forensic Inquiries</span>
+        </div>
+        <div class="forensic-stat-card">
+          <span class="stat-label">LOSS FINGERPRINTS</span>
+          <span class="stat-value text-rose" id="totalLossesVal">0</span>
+          <span class="stat-subtext">Recorded Failure Archetypes</span>
+        </div>
+        <div class="forensic-stat-card">
+          <span class="stat-label">REINFORCED WINS</span>
+          <span class="stat-value text-emerald" id="totalWinsVal">0</span>
+          <span class="stat-subtext">Positive Behavioral Reinforcement</span>
+        </div>
+        <div class="forensic-stat-card">
+          <span class="stat-label">QUARANTINED ASSETS</span>
+          <span class="stat-value text-amber" id="quarantinedCountVal">0</span>
+          <span class="stat-subtext">Cooling-off Regime Lockout</span>
+        </div>
+      </div>
+
+      <!-- Quarantines & Adaptive Adjustments Row -->
+      <div class="forensic-subgrid mt-3">
+        <div class="forensic-box">
+          <h4 class="box-title">🛡️ Active Asset Quarantines (Cooling Off)</h4>
+          <div id="quarantineBadgesList" class="badge-list">
+            <span class="text-muted">No assets currently quarantined. All tracked pairs eligible for dual-key evaluation.</span>
+          </div>
+        </div>
+        <div class="forensic-box">
+          <h4 class="box-title">⚙️ Learned Adaptive ATR Stop Multipliers</h4>
+          <div id="adaptiveAtrBadgesList" class="badge-list">
+            <span class="text-muted">Default baseline: 1.50x ATR buffer across all pairs.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Forensic Autopsies Case Files -->
+      <div class="mt-4">
+        <h4 class="box-title mb-2">🔬 Recent Loss Autopsies & Learned Remedies</h4>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Asset</th>
+                <th>Loss</th>
+                <th>Failure Archetype</th>
+                <th>Diagnostic Root Cause</th>
+                <th>Learned Remedy (Rule Applied)</th>
+              </tr>
+            </thead>
+            <tbody id="autopsyTableBody">
+              <tr>
+                <td colspan="6" class="text-muted text-center">No loss autopsies recorded. Zero repeated mistakes active.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bottom Row: Active Positions & Trade Journal -->
+    <div class="positions-grid">
+      <!-- Open Positions -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-icon">💼</span>
+            <h3>ACTIVE POSITIONS (<span id="openCount">0</span>)</h3>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Symbol</th>
+                <th>Side</th>
+                <th>Contracts</th>
+                <th>Entry Price</th>
+                <th>Current Price</th>
+                <th>Trailing Stop Loss</th>
+                <th>Take Profit 1</th>
+                <th>Unrealized PnL</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="positionsTableBody">
+              <tr>
+                <td colspan="9" class="text-muted text-center">No active positions. Awaiting high-conviction dual-key setup.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Closed Trades History -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-icon">📜</span>
+            <h3>TRADE AUDIT JOURNAL</h3>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Symbol</th>
+                <th>Side</th>
+                <th>Contracts</th>
+                <th>Entry</th>
+                <th>Exit</th>
+                <th>Realized PnL</th>
+                <th>Return %</th>
+                <th>Exit Reason</th>
+                <th>Closed At</th>
+              </tr>
+            </thead>
+            <tbody id="journalTableBody">
+              <tr>
+                <td colspan="9" class="text-muted text-center">No closed trades yet. System runs with strict capital preservation.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

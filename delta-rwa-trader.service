@@ -1,0 +1,15 @@
+[Unit]
+Description=Delta Exchange US Stocks RWA Multi-Agent Trading System
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/delta-rwa-trader
+ExecStart=/usr/bin/python3 run.py
+Restart=always
+RestartSec=5
+EnvironmentFile=/root/delta-rwa-trader/.env
+
+[Install]
+WantedBy=multi-user.target

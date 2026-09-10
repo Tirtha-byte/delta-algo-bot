@@ -1,0 +1,35 @@
+# Environment variables & API credentials
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv/
+
+# Archives & Temporary files
+*.tar.gz
+*.zip
+*.log
+*.key
+*.pem
+
+# IDE & OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Test coverage & artifacts
+.coverage
+htmlcov/
+.pytest_cache/
