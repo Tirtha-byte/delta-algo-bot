@@ -26,7 +26,7 @@ class SessionMomentumEngine:
     """
     def __init__(self):
         self.default_alpha_threshold = 0.45
-        self.high_momentum_alpha_threshold = 0.38
+        self.high_momentum_alpha_threshold = float(os.getenv("QUANT_HIGH_MOMENTUM_ALPHA", "0.30"))
         self.dead_zone_alpha_threshold = 0.48
 
     def get_current_session(self, current_dt: Optional[datetime] = None) -> Dict[str, Any]:

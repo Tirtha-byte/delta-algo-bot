@@ -243,7 +243,10 @@ async def background_trading_loop():
                 "research_status": research_daemon.get_status()
             })
         except Exception as e:
-            print(f"[BackgroundLoop] Error: {e}")
+            import traceback
+            from datetime import datetime, timezone
+            print(f"[BackgroundLoop] Error at {datetime.now(timezone.utc).isoformat()}: {e}")
+            traceback.print_exc()
         
         sleep_interval = session_momentum_engine.get_scan_interval()
         await asyncio.sleep(sleep_interval)

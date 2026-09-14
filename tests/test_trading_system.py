@@ -431,7 +431,7 @@ class TestTradingSystem(unittest.TestCase):
         session_us = session_momentum_engine.get_current_session(dt_us_open)
         self.assertEqual(session_us["session_name"], "US_OPEN_POWER_SURGE")
         self.assertTrue(session_us["is_high_momentum"])
-        self.assertEqual(session_us["alpha_threshold"], 0.38)
+        self.assertEqual(session_us["alpha_threshold"], 0.30)
         self.assertEqual(session_us["scan_interval_seconds"], 30)
         self.assertTrue(session_us["allow_pure_technical_breakouts"])
 
@@ -440,7 +440,7 @@ class TestTradingSystem(unittest.TestCase):
         session_power = session_momentum_engine.get_current_session(dt_power_hour)
         self.assertEqual(session_power["session_name"], "US_POWER_HOUR")
         self.assertTrue(session_power["is_high_momentum"])
-        self.assertEqual(session_power["alpha_threshold"], 0.38)
+        self.assertEqual(session_power["alpha_threshold"], 0.30)
 
         # 3. Test London / Europe Morning (Monday 10:00 UTC)
         dt_london = datetime(2026, 9, 14, 10, 0, tzinfo=timezone.utc)
@@ -457,7 +457,7 @@ class TestTradingSystem(unittest.TestCase):
         self.assertEqual(session_dead["alpha_threshold"], 0.48)
 
         # 5. Dynamic Alpha Threshold calculation across asset types
-        self.assertEqual(session_momentum_engine.get_alpha_threshold("NVDAXUSD", dt_us_open), 0.38)
+        self.assertEqual(session_momentum_engine.get_alpha_threshold("NVDAXUSD", dt_us_open), 0.30)
         self.assertEqual(session_momentum_engine.get_alpha_threshold("NVDAXUSD", dt_dead), 0.48)
         self.assertEqual(session_momentum_engine.get_alpha_threshold("BTCUSD", dt_dead), 0.45)
 
