@@ -174,18 +174,57 @@ async def reset_balance():
     })
     return summary
 
+@app.get("/api/research/status")
+async def get_research_status():
+    from research.research_daemon import research_daemon
+    return research_daemon.get_status()
+
+@app.get("/api/research/leaderboard")
+async def get_research_leaderboard():
+    from research.candidate_ranker import candidate_ranker
+    return candidate_ranker.get_leaderboard()
+
+@app.get("/api/reconciliation")
+async def get_reconciliation_status():
+    from execution.reconciliation_engine import reconciliation_engine
+    return {
+        "is_halted": reconciliation_engine.is_halted(),
+        "halt_reason": reconciliation_engine.halt_reason,
+        "last_report": reconciliation_engine.last_report
+    }
+
+@app.get("/api/journal/stats")
+async def get_journal_stats():
+    from agents.live_trade_journal import live_trade_journal
+    return live_trade_journal.get_performance_stats()
+
+@app.get("/api/journal/evaluations")
+async def get_journal_evaluations():
+    from agents.live_trade_journal import live_trade_journal
+    return live_trade_journal.get_recent_evaluations(30)
+
 # Asynchronous Background Worker Loop
 async def background_trading_loop():
     await asyncio.sleep(2)
-    orchestrator.log_agent_thought("Supervisor", "INIT", "Autonomous US Stock RWA multi-agent engine online. Starting periodic scanning.", level="SUCCESS")
+    orchestrator.log_agent_thought("Supervisor", "INIT", "BEAST v2 Production Multi-Agent Engine Online.", level="SUCCESS")
     while True:
         try:
-            # 1. Update tickers for open positions
+            # 1. Update tickers for active positions and priority tokens
             tickers_map = {}
-            for sym in system_config.US_STOCKS_RWA[:8]:
-                tk = delta_client.get_ticker(sym)
-                if tk.get("mark_price", 0) > 0:
-                    tickers_map[sym] = tk["mark_price"]
+            live_pos_resp = delta_client.get_positions()
+            if live_pos_resp.get("success"):
+                for pos in live_pos_resp.get("result", []):
+                    sym = pos.get("product_symbol")
+                    if sym and abs(float(pos.get("size", 0))) > 0:
+                        tk = delta_client.get_ticker(sym)
+                        if tk.get("mark_price", 0) > 0:
+                            tickers_map[sym] = tk["mark_price"]
+
+            for sym in system_config.US_STOCKS_RWA[:6]:
+                if sym not in tickers_map:
+                    tk = delta_client.get_ticker(sym)
+                    if tk.get("mark_price", 0) > 0:
+                        tickers_map[sym] = tk["mark_price"]
             
             # Sync trailing stops and PnL
             portfolio = execution_manager.sync_portfolio(tickers_map)
@@ -194,12 +233,14 @@ async def background_trading_loop():
             scan_data = orchestrator.run_full_scan()
 
             # 3. Broadcast to UI
+            from research.research_daemon import research_daemon
             await ws_manager.broadcast({
                 "type": "CYCLE_UPDATE",
                 "portfolio": portfolio,
                 "logs": orchestrator.deliberation_logs[-15:],
                 "active_results": scan_data.get("results", []),
-                "forensic_memory": forensic_learner.get_memory_summary()
+                "forensic_memory": forensic_learner.get_memory_summary(),
+                "research_status": research_daemon.get_status()
             })
         except Exception as e:
             print(f"[BackgroundLoop] Error: {e}")
@@ -209,4 +250,35 @@ async def background_trading_loop():
 
 @app.on_event("startup")
 async def on_startup():
+    from data.market_data_engine import market_data_engine
+    from data.account_engine import account_engine
+    from research.research_daemon import research_daemon
+    from execution.reconciliation_engine import reconciliation_engine
+
+    # 1. Start live Delta WebSocket market data feed
+    market_data_engine.start()
+
+    # 2. Start private account WebSocket feed if credentials configured
+    if delta_config.API_KEY and delta_config.API_SECRET:
+        account_engine.start()
+
+    # 3. Start continuous reconciliation supervisor
+    reconciliation_engine.start()
+
+    # 4. Start 24/7 autonomous research & backtesting lab daemon
+    research_daemon.start()
+
+    # 5. Launch background scanning and portfolio management loop
     asyncio.create_task(background_trading_loop())
+
+@app.on_event("shutdown")
+async def on_shutdown():
+    from data.market_data_engine import market_data_engine
+    from data.account_engine import account_engine
+    from research.research_daemon import research_daemon
+    from execution.reconciliation_engine import reconciliation_engine
+
+    research_daemon.stop()
+    reconciliation_engine.stop()
+    account_engine.stop()
+    market_data_engine.stop()

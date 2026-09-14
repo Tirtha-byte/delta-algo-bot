@@ -312,6 +312,57 @@
       </div>
     </section>
 
+    <!-- 24/7 Autonomous Research & Backtesting Lab Section -->
+    <section class="forensic-card" style="border-left: 4px solid var(--accent-cyan, #06b6d4); margin-bottom: 20px;">
+      <div class="forensic-header">
+        <div>
+          <span class="badge-stage" style="background: rgba(6,182,212,0.15); color: #06b6d4; border-color: rgba(6,182,212,0.3);">
+            🧬 24/7 AUTONOMOUS RESEARCH & BACKTESTING LAB
+          </span>
+          <h3 class="forensic-title" style="margin-top: 6px;">Continuous Self-Optimization & Walk-Forward Engine</h3>
+        </div>
+        <div class="forensic-stats">
+          <div class="stat-box">
+            <span class="stat-label">LAB STATUS</span>
+            <span class="stat-value text-emerald" id="labStatusBadge" style="font-size: 13px;">ACTIVE (Low CPU)</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">CYCLES RUN</span>
+            <span class="stat-value text-cyan" id="labCycleCount">0</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">RECONCILIATION</span>
+            <span class="stat-value text-emerald" id="reconciliationBadge" style="font-size: 13px;">HEALTHY</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <!-- Top Candidate Strategy Improvement -->
+        <div style="background: rgba(15,23,42,0.6); padding: 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+          <div style="font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 700; margin-bottom: 6px;">
+            🏆 LEADING STRATEGY CANDIDATE (Out-Of-Sample)
+          </div>
+          <div id="topCandidateDetails" style="font-size: 13px; color: #f8fafc; line-height: 1.6;">
+            <div style="color: #64748b;">Awaiting initial research cycle completion...</div>
+          </div>
+        </div>
+
+        <!-- Research Status & Telemetry -->
+        <div style="background: rgba(15,23,42,0.6); padding: 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+          <div style="font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 700; margin-bottom: 6px;">
+            ⚡ CONTINUOUS LAB TELEMETRY
+          </div>
+          <div id="labTelemetryText" style="font-size: 12px; color: #cbd5e1; line-height: 1.6;">
+            • Background process priority: <b>Nice +10 (Live Trading Priority)</b><br>
+            • Backtest engine: <b>BEAST v2 Exact Logic & Fees (0.10%)</b><br>
+            • Walk-Forward validation: <b>70/30 Rolling In/Out Sample</b><br>
+            • Status: <span id="labStatusMsg" style="color: #38bdf8;">Running continuously in background</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Bottom Row: Active Positions & Trade Journal -->
     <div class="positions-grid">
       <!-- Open Positions -->

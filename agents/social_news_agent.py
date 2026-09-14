@@ -5,14 +5,16 @@ from datetime import datetime, timezone
 
 class SocialNewsAgent:
     """
-    Agent 1: Social & News Intelligence Agent (Mandatory Dual-Key Gatekeeper).
+    BEAST v2 Real News & Catalyst Intelligence Agent.
     
-    Enforces:
-    1. 3-Tier Source Hierarchy (Tier 1 Primary/SEC -> Tier 2 News -> Tier 3 Social).
-    2. Strict Epistemic Partitioning (FACT vs REPORT vs SOCIAL CLAIM vs MODEL INTERPRETATION).
-    3. Anti-Bot & Sentiment Manipulation Detection (Sybil attacks, coordinated hashtag bursts,
-       copy-paste spam, influencer concentration).
-    4. Mathematical Usable Sentiment & Confidence Calculation.
+    Principles:
+    1. Zero Fake/Simulated News: Never generate synthetic sentiment to satisfy a gate.
+    2. Epistemic Separation: FACT (Tier 1 SEC/IR) vs REPORT (Tier 2 Financial Press) vs SOCIAL CLAIM (Tier 3).
+    3. Explicit UNKNOWN State: If genuine verified news is unavailable, NEWS_STATE = UNKNOWN.
+       Technical setups proceed freely with NEWS = UNKNOWN.
+    4. Adverse News Veto: Material verified adverse disclosures (fraud, SEC subpoena, guidance crash) veto trades.
+    5. Social Manipulation Detection: Detects bot bursts, sybil rings, duplicate spam.
+    6. News/Price Divergence: Detects when price movement contradicts news flow.
     """
     def __init__(self):
         self.tier1_domains = [
@@ -28,7 +30,6 @@ class SocialNewsAgent:
         ]
 
     def _strip_symbol(self, token_symbol: str) -> str:
-        """Map Delta contract symbol back to US stock ticker (e.g. NVDAXUSD -> NVDA, PLTRBUSD -> PLTR)."""
         clean = token_symbol.replace("USD", "")
         for suffix in ["X", "B", "ON"]:
             if clean.endswith(suffix):
@@ -38,14 +39,34 @@ class SocialNewsAgent:
 
     def analyze_news_feed(self, token_symbol: str, raw_items: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
         """
-        Evaluate social and news stream for a given US stock RWA.
-        Partitions data epistemically, scores authenticity, and determines gate pass/fail.
+        Evaluate social and news stream for a given token.
+        If raw_items is empty/None, returns NEWS_STATE = UNKNOWN without synthesizing fake data.
         """
         stock_ticker = self._strip_symbol(token_symbol)
-        
-        # If no raw items passed, generate an evaluated snapshot based on stock fundamental state
+
+        # Explicit UNKNOWN State when no genuine data is present
         if not raw_items:
-            raw_items = self._fetch_or_simulate_news(stock_ticker)
+            return {
+                "asset": stock_ticker,
+                "token_symbol": token_symbol,
+                "news_state": "UNKNOWN",
+                "event": "NO_VERIFIED_NEWS",
+                "sentiment": 0.0,
+                "usable_sentiment": 0.0,
+                "confidence": 0.0,
+                "source_quality": 0.0,
+                "authenticity_score": 1.0,
+                "cross_source_agreement": 1.0,
+                "emotion": {"fear": 0.2, "greed": 0.2, "optimism": 0.2, "uncertainty": 0.5},
+                "source_counts": {"tier1_primary": 0, "tier2_news": 0, "tier3_social": 0, "total": 0},
+                "facts": [],
+                "reports": [],
+                "social_claims": [],
+                "model_interpretation": "UNKNOWN: No verified news or catalyst disclosures active. Non-blocking for technical setups.",
+                "gate_passed": True,  # Non-blocking when UNKNOWN!
+                "has_adverse_veto": False,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
 
         facts: List[Dict[str, Any]] = []
         reports: List[Dict[str, Any]] = []
@@ -59,13 +80,12 @@ class SocialNewsAgent:
         copy_paste_hashes = set()
         duplicate_posts = 0
         bot_account_flags = 0
-        total_social_volume = 0
 
         for item in raw_items:
             source = item.get("source", "").lower()
             text = item.get("text", "")
-            sentiment = item.get("sentiment", 0.0)
-            
+            sentiment = float(item.get("sentiment", 0.0))
+
             # 1. Tier 1 - Primary Source
             if any(t1 in source for t1 in self.tier1_domains) or item.get("is_sec_filing") or item.get("is_ir"):
                 tier1_count += 1
@@ -90,19 +110,15 @@ class SocialNewsAgent:
             # 3. Tier 3 - Social / Community
             else:
                 tier3_count += 1
-                total_social_volume += item.get("volume", 1)
-                
-                # Check for copy-paste spam
                 norm_text = re.sub(r"[^a-zA-Z0-9]", "", text.lower())[:40]
                 if norm_text in copy_paste_hashes:
                     duplicate_posts += 1
                 else:
                     copy_paste_hashes.add(norm_text)
-                    
-                # Check for account age anomalies (< 30 days)
+
                 if item.get("account_age_days", 100) < 30:
                     bot_account_flags += 1
-                    
+
                 social_claims.append({
                     "type": "SOCIAL_CLAIM",
                     "platform": item.get("source", "X"),
@@ -112,8 +128,7 @@ class SocialNewsAgent:
                     "engagement": item.get("engagement", 0)
                 })
 
-        # Anti-Bot & Engagement Authenticity Heuristics
-        # If > 40% of social claims are duplicates or from fresh bot accounts, authenticity plummets
+        # Anti-Bot & Authenticity Heuristics
         authenticity_score = 1.0
         if tier3_count > 0:
             dup_ratio = duplicate_posts / max(tier3_count, 1)
@@ -123,88 +138,68 @@ class SocialNewsAgent:
         else:
             authenticity_score = 0.95
 
-        # Source Quality (Tier 1 = 1.0, Tier 2 = 0.85, Tier 3 = 0.35)
         total_sources = tier1_count + tier2_count + tier3_count
-        if total_sources == 0:
-            source_quality = 0.5
-        else:
-            source_quality = ((tier1_count * 1.0) + (tier2_count * 0.85) + (tier3_count * 0.35)) / total_sources
+        source_quality = ((tier1_count * 1.0) + (tier2_count * 0.85) + (tier3_count * 0.35)) / max(total_sources, 1)
 
-        # Independence & Agreement
-        all_sentiments = [f["sentiment"] for f in facts] + [r["sentiment"] for r in reports]
-        if all_sentiments:
-            raw_news_sentiment = sum(all_sentiments) / len(all_sentiments)
-        else:
-            raw_news_sentiment = 0.0
+        # Sentiments
+        verified_sentiments = [f["sentiment"] for f in facts] + [r["sentiment"] for r in reports]
+        raw_news_sentiment = sum(verified_sentiments) / len(verified_sentiments) if verified_sentiments else 0.0
 
         social_sentiments = [s["sentiment"] for s in social_claims]
         raw_social_sentiment = sum(social_sentiments) / len(social_sentiments) if social_sentiments else 0.0
 
-        # Cross-source agreement: how closely social agrees with verified facts/reports
         diff = abs(raw_news_sentiment - raw_social_sentiment)
         cross_source_agreement = max(0.2, 1.0 - (diff * 0.5))
-        
-        # Blended raw sentiment
+
         if facts or reports:
-            raw_sentiment = (raw_news_sentiment * 0.7) + (raw_social_sentiment * 0.3)
+            raw_sentiment = (raw_news_sentiment * 0.75) + (raw_social_sentiment * 0.25)
         else:
-            raw_sentiment = raw_social_sentiment * 0.5  # Heavy discount if only social claims
+            raw_sentiment = raw_social_sentiment * 0.4  # Heavy discount if only unverified social claims
 
-        # Mathematical Usable Sentiment Formula
-        # Usable Sentiment = Raw Sentiment * Source Quality * Independence * Recency * Engagement Authenticity
-        recency = 0.95
+        # Usable Sentiment Formula
         independence = 0.88 if (tier1_count + tier2_count) >= 2 else 0.50
-        usable_sentiment = raw_sentiment * source_quality * independence * recency * authenticity_score
+        usable_sentiment = raw_sentiment * source_quality * independence * authenticity_score
 
-        # Confidence Score (0.0 to 1.0)
-        # Strongly penalized if no primary sources and low authenticity
-        base_confidence = 0.50
-        if tier1_count >= 1:
-            base_confidence += 0.25
-        if tier2_count >= 2:
-            base_confidence += 0.15
-        base_confidence *= authenticity_score
-        base_confidence *= cross_source_agreement
-        confidence = min(0.99, max(0.10, base_confidence))
+        # Confidence
+        base_conf = 0.50
+        if tier1_count >= 1: base_conf += 0.25
+        if tier2_count >= 2: base_conf += 0.15
+        confidence = min(0.99, max(0.10, base_conf * authenticity_score * cross_source_agreement))
 
-        # Emotions
-        emotions = {
-            "fear": round(max(0.05, 0.4 - usable_sentiment * 0.3), 2),
-            "greed": round(max(0.05, 0.3 + usable_sentiment * 0.4), 2),
-            "optimism": round(max(0.1, 0.5 + usable_sentiment * 0.5), 2),
-            "uncertainty": round(max(0.08, 0.5 - confidence * 0.4), 2)
-        }
+        # Check for material adverse veto (e.g. verified news sentiment < -0.40)
+        has_adverse_veto = bool(verified_sentiments and raw_news_sentiment < -0.35 and confidence >= 0.60)
 
-        # Epistemic Model Interpretation
-        if usable_sentiment > 0.3 and confidence >= 0.65:
-            model_interp = f"Strongly Bullish (+{usable_sentiment:.2f}): Backed by authentic verified disclosures."
+        # Check for manipulation veto
+        is_manipulated = (authenticity_score < 0.50 and tier3_count >= 3)
+
+        if has_adverse_veto:
+            model_interp = f"ADVERSE VETOED: Verified negative disclosure ({raw_news_sentiment:+.2f})."
+            gate_passed = False
+            news_state = "RISK"
+        elif is_manipulated:
+            model_interp = f"MANIPULATION VETOED: Coordinated bot spam detected (Authenticity: {authenticity_score*100:.0f}%)."
+            gate_passed = False
+            news_state = "MANIPULATED"
+        elif usable_sentiment >= 0.30 and confidence >= 0.65:
+            model_interp = f"CATALYST APPROVED: Verified bullish backing (+{usable_sentiment:.2f}, Conf: {confidence*100:.0f}%)."
             gate_passed = True
-        elif usable_sentiment < -0.3 and confidence >= 0.65:
-            model_interp = f"Bearish Warning ({usable_sentiment:.2f}): Material negative catalysts or earnings headwinds."
-            gate_passed = False  # Or short signal
-        elif authenticity_score < 0.50:
-            model_interp = "VETOED: Coordinated bot activity / sybil pump detected. Authenticity collapsed."
-            gate_passed = False
-        elif not facts and not reports:
-            model_interp = "VETOED: Uncorroborated social rumors. No Tier 1 or Tier 2 verification."
-            gate_passed = False
+            news_state = "CATALYST"
         else:
-            model_interp = f"Neutral / Insufficient Conviction ({usable_sentiment:.2f}). Confidence {confidence*100:.1f}% below 65% bar."
-            gate_passed = False
+            model_interp = f"NEUTRAL: News flow balanced ({usable_sentiment:+.2f}). Non-blocking for technical setups."
+            gate_passed = True
+            news_state = "NEUTRAL"
 
-        event_name = "earnings_guidance_or_macro_flow" if (facts or reports) else "social_buzz"
-        
         return {
             "asset": stock_ticker,
             "token_symbol": token_symbol,
-            "event": event_name,
+            "news_state": news_state,
+            "event": "verified_catalyst" if (facts or reports) else "social_buzz",
             "sentiment": round(raw_sentiment, 3),
             "usable_sentiment": round(usable_sentiment, 3),
             "confidence": round(confidence, 3),
             "source_quality": round(source_quality, 3),
             "authenticity_score": round(authenticity_score, 3),
             "cross_source_agreement": round(cross_source_agreement, 3),
-            "emotion": emotions,
             "source_counts": {
                 "tier1_primary": tier1_count,
                 "tier2_news": tier2_count,
@@ -213,64 +208,34 @@ class SocialNewsAgent:
             },
             "facts": facts,
             "reports": reports,
-            "social_claims": social_claims[:5],  # Top 5 representative claims
+            "social_claims": social_claims[:5],
             "model_interpretation": model_interp,
             "gate_passed": gate_passed,
+            "has_adverse_veto": has_adverse_veto,
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
 
-    def _fetch_or_simulate_news(self, stock_ticker: str) -> List[Dict[str, Any]]:
+    def detect_news_technical_divergence(self, news_sentiment: float, technical_direction: str) -> Dict[str, Any]:
         """
-        Grounded institutional feed simulator populated with real company catalysts.
+        Classifies interaction between news sentiment and price trend:
+        - NEWS_PRICE_CONFIRMATION
+        - NEWS_PRICE_DIVERGENCE
+        - NEWS_PRICE_CONTRADICTION
         """
-        now = datetime.now(timezone.utc).isoformat()
-        stock_profiles = {
-            "BTC": [
-                {"source": "bloomberg.com", "text": "Bloomberg: Institutional spot Bitcoin ETFs record sustained net inflows across major asset managers.", "sentiment": 0.82, "is_verified_press": True},
-                {"source": "reuters.com", "text": "Reuters: CME Bitcoin futures open interest hits multi-month highs amidst macro liquidity tailwinds.", "sentiment": 0.78, "is_verified_press": True},
-                {"source": "delta.exchange", "text": "Delta: BTC perpetual funding rates remain balanced with deep institutional orderbook liquidity.", "sentiment": 0.72, "is_verified_press": True},
-                {"source": "x.com", "text": "BTC holding key macro support with persistent spot volume accumulation.", "sentiment": 0.85, "engagement": 1500, "account_age_days": 1100}
-            ],
-            "ETH": [
-                {"source": "bloomberg.com", "text": "Bloomberg: Ethereum Layer 2 activity and staking participation reach new network milestones.", "sentiment": 0.76, "is_verified_press": True},
-                {"source": "reuters.com", "text": "Reuters: Institutional demand steady amidst digital asset treasury and staking expansions.", "sentiment": 0.72, "is_verified_press": True},
-                {"source": "delta.exchange", "text": "Delta: ETH perpetual basis and implied volatility indicate healthy trend continuation.", "sentiment": 0.68, "is_verified_press": True},
-                {"source": "x.com", "text": "ETH demonstrating solid technical consolidation above key exponential moving averages.", "sentiment": 0.80, "engagement": 950, "account_age_days": 900}
-            ],
-            "NVDA": [
-                {"source": "sec.gov", "text": "Form 8-K: Record Data Center Blackwell chip shipments confirmed.", "sentiment": 0.88, "is_sec_filing": True},
-                {"source": "reuters.com", "text": "Reuters: Tech giants accelerate AI server capital expenditure.", "sentiment": 0.79, "is_verified_press": True},
-                {"source": "bloomberg.com", "text": "Bloomberg: Analysts raise NVDA price targets following semiconductor demand check.", "sentiment": 0.82, "is_verified_press": True},
-                {"source": "x.com", "text": "NVDA breaking to new ATH, massive volume breakout!", "sentiment": 0.90, "engagement": 450, "account_age_days": 820},
-                {"source": "reddit.com", "text": "NVDA call options buying volume surging into next session.", "sentiment": 0.75, "engagement": 320, "account_age_days": 1200}
-            ],
-            "TSLA": [
-                {"source": "sec.gov", "text": "Form 8-K: Q3 Energy Storage Megapack deployment up 62% YoY.", "sentiment": 0.75, "is_sec_filing": True},
-                {"source": "reuters.com", "text": "Reuters: Robotaxi commercial regulatory approval filed in California.", "sentiment": 0.72, "is_verified_press": True},
-                {"source": "cnbc.com", "text": "CNBC: EV deliveries stabilize amidst European market expansion.", "sentiment": 0.58, "is_verified_press": True},
-                {"source": "x.com", "text": "TSLA FSD v13 rollout shows significant intervention drop.", "sentiment": 0.82, "engagement": 1200, "account_age_days": 1400}
-            ],
-            "PLTR": [
-                {"source": "sec.gov", "text": "Form 8-K: New multi-year $480M contract awarded for AIP enterprise rollout.", "sentiment": 0.85, "is_sec_filing": True},
-                {"source": "wsj.com", "text": "Wall Street Journal: US Defense and healthcare commercial revenue accelerates.", "sentiment": 0.78, "is_verified_press": True},
-                {"source": "x.com", "text": "PLTR AIP bootcamps driving unprecedented enterprise adoption.", "sentiment": 0.84, "engagement": 900, "account_age_days": 600}
-            ],
-            "MSTR": [
-                {"source": "sec.gov", "text": "Form 8-K: Completion of convertible senior notes offering at 0% coupon.", "sentiment": 0.72, "is_sec_filing": True},
-                {"source": "bloomberg.com", "text": "Bloomberg: Premium to NAV widens as corporate balance sheet strategy persists.", "sentiment": 0.65, "is_verified_press": True}
-            ],
-            "SPY": [
-                {"source": "reuters.com", "text": "Reuters: Federal Reserve rate easing path remains anchored to cooling inflation.", "sentiment": 0.65, "is_verified_press": True},
-                {"source": "wsj.com", "text": "Wall Street Journal: Corporate earnings breadth expands beyond mega-caps.", "sentiment": 0.68, "is_verified_press": True}
-            ],
-            "QQQ": [
-                {"source": "bloomberg.com", "text": "Bloomberg: Tech sector earnings yield remains resilient amidst cloud growth.", "sentiment": 0.70, "is_verified_press": True},
-                {"source": "ft.com", "text": "Financial Times: Cloud software and semiconductor capex supporting index highs.", "sentiment": 0.72, "is_verified_press": True}
-            ]
-        }
-        return stock_profiles.get(stock_ticker, [
-            {"source": "marketwatch.com", "text": f"{stock_ticker} consolidated trading within multi-week technical channel.", "sentiment": 0.20, "is_verified_press": True},
-            {"source": "x.com", "text": f"Watching {stock_ticker} for volume expansion.", "sentiment": 0.35, "engagement": 50, "account_age_days": 400}
-        ])
+        if abs(news_sentiment) < 0.15 or technical_direction == "NEUTRAL":
+            return {"divergence": "NEUTRAL", "description": "No significant news/price disparity"}
+
+        if technical_direction == "LONG":
+            if news_sentiment > 0.20:
+                return {"divergence": "NEWS_PRICE_CONFIRMATION", "description": "Bullish price confirmed by positive news catalyst"}
+            elif news_sentiment < -0.20:
+                return {"divergence": "NEWS_PRICE_CONTRADICTION", "description": "Price rising despite negative news. Potential short squeeze or news absorption."}
+        elif technical_direction == "SHORT":
+            if news_sentiment < -0.20:
+                return {"divergence": "NEWS_PRICE_CONFIRMATION", "description": "Bearish price confirmed by negative news catalyst"}
+            elif news_sentiment > 0.20:
+                return {"divergence": "NEWS_PRICE_CONTRADICTION", "description": "Price dropping despite positive news. Smart money distribution into retail hype."}
+
+        return {"divergence": "NEWS_PRICE_DIVERGENCE", "description": "Mild divergence between price and news flow"}
 
 social_news_agent = SocialNewsAgent()

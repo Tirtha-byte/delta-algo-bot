@@ -1,0 +1,23 @@
+{
+  "total_trades": 43,
+  "wins": 33,
+  "losses": 10,
+  "win_rate": 76.7,
+  "trades_per_day": 41.5,
+  "profit_factor": 0.63,
+  "total_return_pct": -1.58,
+  "max_drawdown_pct": 1.86,
+  "parameters": {
+    "tp1_mult": 0.61,
+    "tp2_mult": 2.3,
+    "sl_mult": 2.42,
+    "scale_pct": 0.75,
+    "trend_sep": 0.0006,
+    "pullback_max_atr": 0.74,
+    "fee_cushion": 0.0015,
+    "min_adx": 20.0,
+    "use_candle_trigger": true,
+    "min_tp_pct": 0.0018
+  },
+  "fitness_score": 52.72
+}

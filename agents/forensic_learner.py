@@ -1,22 +1,30 @@
+"""
+BEAST v2 - Forensic Post-Mortem & Self-Improving Memory Agent
+agents/forensic_learner.py
+
+Responsibilities:
+1. Automated Post-Mortem Autopsy: Diagnoses root causes of every closed trade.
+   Categorizes into rigorous quant buckets:
+   - VALID_MARKET_LOSS: Valid setup that failed due to normal market variance.
+   - VALID_MARKET_WIN: Positive expectancy confirmation.
+   - EXECUTION_ERROR: Slippage, spread expansion, or fill delay.
+   - DATA_ERROR: WebSocket staleness or disconnect.
+   - SOFTWARE_ERROR: System bug (Crucial: NEVER quarantines an asset or penalizes setup stats!).
+   - EXCHANGE_ERROR: Delta Exchange reject, gateway error, or maintenance.
+2. Anti-Pattern Fingerprint Memory: Prevents repeat mistakes (Counter-trend traps, overextended RSI, etc.)
+3. Pre-Flight Inspection & Veto: Evaluates proposals before order execution.
+4. Auto-journaling to LiveTradeJournal.
+"""
+
 import os
 import json
 import time
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone, timedelta
+from agents.live_trade_journal import live_trade_journal
+
 
 class ForensicLearnerAgent:
-    """
-    Agent 5: Forensic Post-Mortem & Self-Improving Memory Agent.
-    
-    Responsibilities:
-    1. Automated Post-Mortem Autopsy: Diagnoses root causes of every closed trade loss
-       (Counter-Trend Trap, Overextended Momentum, Volatility Wick Squeeze, Social Hype Trap, Regime Chop).
-    2. Persistent Anti-Pattern Memory: Records failure fingerprints to disk (data/forensic_memory.json).
-    3. Pre-Flight Inspection & Veto: Intercepts trade proposals before execution; vetoes proposals
-       matching past mistakes or under active quarantine.
-    4. Dynamic Adaptive Sizing: Automatically widens ATR stop multipliers for assets with wick noise,
-       and escalates confidence hurdles for underperforming assets.
-    """
     def __init__(self, data_path: Optional[str] = None):
         if data_path:
             self.data_path = data_path
@@ -30,7 +38,7 @@ class ForensicLearnerAgent:
 
     def _load_memory(self) -> Dict[str, Any]:
         default_state = {
-            "version": "1.0",
+            "version": "2.0",
             "total_autopsies": 0,
             "total_losses_analyzed": 0,
             "total_wins_analyzed": 0,
@@ -99,33 +107,70 @@ class ForensicLearnerAgent:
 
     def conduct_autopsy(self, trade_record: Dict[str, Any], market_context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
-        Perform a rigorous forensic autopsy on a closed trade.
-        If winning: registers positive reinforcement and resets consecutive loss streak.
-        If losing: diagnoses root failure pattern, saves fingerprint, adjusts parameters, and quarantines if necessary.
+        Perform a quant-grade forensic autopsy on a closed trade.
         """
         symbol = trade_record.get("symbol", "UNKNOWN")
-        realized_pnl = float(trade_record.get("realized_pnl", 0.0))
+        realized_pnl = float(trade_record.get("realized_pnl", trade_record.get("pnl", 0.0)))
         side = trade_record.get("side", "BUY")
         entry = float(trade_record.get("entry_price", 0.0))
         exit_price = float(trade_record.get("exit_price", entry))
-        profile = self._get_asset_profile(symbol)
-
-        profile["total_trades"] += 1
+        error_type = trade_record.get("error_type")  # e.g., "SOFTWARE_ERROR", "EXCHANGE_ERROR"
         now_iso = datetime.now(timezone.utc).isoformat()
 
-        # CASE 1: PROFITABLE TRADE
-        if realized_pnl >= 0:
-            self.memory["total_wins_analyzed"] += 1
-            profile["wins"] += 1
-            profile["consecutive_losses"] = 0
-            profile["confidence_hurdle"] = max(0.65, round(profile["confidence_hurdle"] - 0.05, 2))
+        # CRITICAL SAFETY RULE: Software errors must NEVER penalize asset or quarantine
+        if error_type in ("SOFTWARE_ERROR", "DATA_ERROR", "EXCHANGE_ERROR"):
+            forensic_cat = error_type
+            autopsy_report = {
+                "timestamp": now_iso,
+                "symbol": symbol,
+                "side": side,
+                "realized_pnl": realized_pnl,
+                "forensic_category": forensic_cat,
+                "archetype": error_type,
+                "diagnosis": f"Technical non-market fault: {trade_record.get('reason', 'System fault')}",
+                "remedy": "Fix system defect. Asset stats not penalized.",
+                "quarantine_applied": False
+            }
+            self.memory["recent_autopsies"].append(autopsy_report)
+            self.save_memory()
+            return autopsy_report
+
+        profile = self._get_asset_profile(symbol)
+        profile["total_trades"] += 1
+
+        is_scratch = abs(realized_pnl) <= 0.05 or trade_record.get("close_reason") == "BREAKEVEN_STOP"
+
+        # CASE 1: PROFITABLE OR SCRATCH/BREAKEVEN TRADE
+        if realized_pnl >= 0 or is_scratch:
+            if realized_pnl > 0:
+                self.memory["total_wins_analyzed"] += 1
+                profile["wins"] += 1
+                profile["consecutive_losses"] = 0
+                profile["confidence_hurdle"] = max(0.65, round(profile["confidence_hurdle"] - 0.05, 2))
+            else:
+                # Scratch / Breakeven trade does not count as a loss streak
+                profile["consecutive_losses"] = 0
+            
             profile["win_rate"] = round((profile["wins"] / profile["total_trades"]) * 100, 1)
             self.save_memory()
+
+            # Record in LiveTradeJournal if not running unit tests
+            if os.environ.get("TESTING") != "1":
+                live_trade_journal.record_trade_exit({
+                    "symbol": symbol,
+                    "side": side,
+                    "entry_price": entry,
+                    "exit_price": exit_price,
+                    "pnl": realized_pnl,
+                    "forensic_category": "VALID_MARKET_WIN" if realized_pnl > 0 else "BREAKEVEN_SCRATCH"
+                })
+
             return {
-                "status": "WIN",
+                "status": "WIN" if realized_pnl > 0 else "BREAKEVEN",
                 "symbol": symbol,
                 "pnl": realized_pnl,
-                "message": f"Win registered for {symbol}. Loss streak reset. Confidence hurdle: {profile['confidence_hurdle']*100:.0f}%."
+                "forensic_category": "VALID_MARKET_WIN" if realized_pnl > 0 else "BREAKEVEN_SCRATCH",
+                "message": f"Trade resolved for {symbol}. Loss streak reset. Confidence hurdle: {profile['confidence_hurdle']*100:.0f}%."
             }
 
         # CASE 2: LOSING TRADE (AUTOPSY)
@@ -153,14 +198,14 @@ class ForensicLearnerAgent:
         ema200 = quant_info.get("ema200", close_price)
         rsi = quant_info.get("rsi", 50.0)
 
-        archetype = "GENERIC_STOP_OUT"
+        archetype = "VALID_MARKET_LOSS"
         diagnosis = "Standard bracket stop-loss triggered by adverse market movement."
-        remedy = "Tighten entry confluence filters."
+        remedy = "Normal quant variance. Tighten entry confluence."
 
         # Check 1: Counter-Trend Trap
         if (side == "BUY" and trend == "BEARISH") or (side == "SELL" and trend == "BULLISH"):
             archetype = "COUNTER_TREND_TRAP"
-            diagnosis = f"Trade entered against prevailing {trend} trend ribbon. False bottom/top trap."
+            diagnosis = f"Trade entered against prevailing {trend} trend ribbon."
             remedy = f"Strictly prohibit {side} entries when trend alignment is {trend}."
         elif (side == "BUY" and close_price < ema200 * 0.98) or (side == "SELL" and close_price > ema200 * 1.02):
             archetype = "EMA200_MACRO_RESISTANCE"
@@ -170,11 +215,11 @@ class ForensicLearnerAgent:
         # Check 2: Overextended Momentum
         elif side == "BUY" and rsi > 68.0:
             archetype = "OVEREXTENDED_LONG"
-            diagnosis = f"Entered LONG at overbought RSI ({rsi:.1f}). Pullback swallowed stop."
+            diagnosis = f"Entered LONG at overbought RSI ({rsi:.1f})."
             remedy = "Hard cap: Never initiate LONG when RSI 14 > 65.0."
         elif side == "SELL" and rsi < 32.0:
             archetype = "OVEREXTENDED_SHORT"
-            diagnosis = f"Entered SHORT at oversold RSI ({rsi:.1f}). Short-squeeze swallowed stop."
+            diagnosis = f"Entered SHORT at oversold RSI ({rsi:.1f})."
             remedy = "Hard cap: Never initiate SHORT when RSI 14 < 35.0."
 
         # Check 3: Volatility Wick Squeeze
@@ -183,16 +228,16 @@ class ForensicLearnerAgent:
             current_atr_mult = profile.get("adaptive_atr_multiplier", 1.5)
             new_atr_mult = round(min(2.5, current_atr_mult + 0.3), 2)
             profile["adaptive_atr_multiplier"] = new_atr_mult
-            diagnosis = f"Stopped out prematurely in {duration_seconds//60}m. Normal candle noise exceeded stop distance."
-            remedy = f"Dynamically widened adaptive ATR stop multiplier for {symbol} from {current_atr_mult}x -> {new_atr_mult}x."
+            diagnosis = f"Stopped out prematurely in {duration_seconds//60}m due to market noise."
+            remedy = f"Dynamically widened adaptive ATR stop multiplier for {symbol} to {new_atr_mult}x."
 
-        # Check 4: Unconfirmed Social Hype Trap
+        # Check 4: Unconfirmed Social Hype
         elif news_info.get("source_counts", {}).get("tier1_primary", 0) == 0 and news_info.get("source_counts", {}).get("tier3_social", 0) > 0:
             archetype = "UNCONFIRMED_SOCIAL_HYPE"
-            diagnosis = "Trade entered on social community buzz without Tier 1 regulatory/filing verification."
-            remedy = "Enforce mandatory Tier 1 (SEC/IR) or Tier 2 verification before entering."
+            diagnosis = "Trade entered on social community buzz without Tier 1 verification."
+            remedy = "Enforce mandatory Tier 1 (SEC/IR) verification before entering."
 
-        # Dynamic Quarantine Protocol (2 or more consecutive losses)
+        # Dynamic Quarantine Protocol (2 or more consecutive losses of market traps)
         quarantine_applied = False
         quarantine_expiry = None
         cooldown_hours = 0
@@ -232,6 +277,7 @@ class ForensicLearnerAgent:
             "side": side,
             "realized_pnl": realized_pnl,
             "duration_seconds": duration_seconds,
+            "forensic_category": "VALID_MARKET_LOSS",
             "archetype": archetype,
             "diagnosis": diagnosis,
             "remedy": remedy,
@@ -246,15 +292,27 @@ class ForensicLearnerAgent:
             self.memory["recent_autopsies"].pop(0)
 
         self.save_memory()
+
+        # Log in live journal if not running in unit test mode
+        if os.environ.get("TESTING") != "1":
+            live_trade_journal.record_trade_exit({
+                "symbol": symbol,
+                "side": side,
+                "entry_price": entry,
+                "exit_price": exit_price,
+                "pnl": realized_pnl,
+                "forensic_category": "VALID_MARKET_LOSS",
+                "reason": archetype
+            })
+
         return autopsy_report
 
     def pre_flight_inspection(self, proposal: Dict[str, Any], quant_eval: Dict[str, Any], news_eval: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Inspect a trade proposal before sizing or execution.
-        Applies learned lessons, checks active quarantines, and enforces adaptive parameters.
+        Inspect trade proposal before execution to prevent repeating past mistakes.
         """
         symbol = proposal.get("symbol", "")
-        side = proposal.get("signal", "BUY")
+        side = proposal.get("signal", proposal.get("direction", "BUY"))
         profile = self._get_asset_profile(symbol)
 
         # 1. Check Active Quarantine
@@ -335,7 +393,6 @@ class ForensicLearnerAgent:
         }
 
     def get_memory_summary(self) -> Dict[str, Any]:
-        """Summary for Dashboard API."""
         return {
             "total_autopsies": self.memory.get("total_autopsies", 0),
             "total_losses_analyzed": self.memory.get("total_losses_analyzed", 0),
@@ -346,5 +403,6 @@ class ForensicLearnerAgent:
             "loss_fingerprints_count": len(self.memory.get("loss_fingerprints", [])),
             "recent_autopsies": self.memory.get("recent_autopsies", [])[-10:]
         }
+
 
 forensic_learner = ForensicLearnerAgent()

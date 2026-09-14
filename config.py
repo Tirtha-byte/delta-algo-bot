@@ -8,10 +8,31 @@ load_dotenv()
 class DeltaConfig(BaseModel):
     # Delta Exchange India (api.india.delta.exchange) or Delta Global (api.delta.exchange)
     BASE_URL: str = os.getenv("DELTA_BASE_URL", "https://api.india.delta.exchange")
-    WS_URL: str = os.getenv("DELTA_WS_URL", "wss://india.delta.exchange/v2/stream")
+    PUBLIC_WS_URL: str = os.getenv("DELTA_PUBLIC_WS_URL", "wss://public-socket.india.delta.exchange")
+    PRIVATE_WS_URL: str = os.getenv("DELTA_PRIVATE_WS_URL", "wss://socket.india.delta.exchange")
+    WS_URL: str = os.getenv("DELTA_WS_URL", "wss://public-socket.india.delta.exchange")
     API_KEY: str = os.getenv("DELTA_API_KEY", "")
     API_SECRET: str = os.getenv("DELTA_API_SECRET", "")
     REQUEST_TIMEOUT: int = 10
+
+class StalenessConfig(BaseModel):
+    DEGRADED_THRESHOLD_MS: int = 2500       # > 2.5s is degraded
+    STALE_THRESHOLD_MS: int = 5000          # > 5.0s blocks orders
+    CRITICAL_STALE_MS: int = 10000          # > 10s forces reconnect
+    MAX_CLOCK_DRIFT_MS: int = 3000          # Clock drift breaker
+    HEARTBEAT_INTERVAL_SEC: int = 15        # Ping interval
+    RECONNECT_BACKOFF_BASE_SEC: float = 1.0
+    RECONNECT_BACKOFF_MAX_SEC: float = 30.0
+
+class ResearchLabConfig(BaseModel):
+    ENABLED: bool = True
+    DATA_DIR: str = "data/historical"
+    CONTINUOUS_FEATURE_INTERVAL_SEC: int = 10  # Lightweight feature checks
+    BACKTEST_CYCLE_INTERVAL_MIN: int = 30     # Asynchronous backtest cycle
+    WFO_CYCLE_INTERVAL_HOURS: int = 4         # Walk-forward optimization cycle
+    STRESS_TEST_INTERVAL_HOURS: int = 6       # Stress test & Monte Carlo cycle
+    MAX_CPU_PERCENT: float = 40.0             # CPU ceiling for background lab
+
 
 class CompoundingConfig(BaseModel):
     STARTING_CAPITAL: float = float(os.getenv("STARTING_CAPITAL", "60.0"))
@@ -29,11 +50,11 @@ class CompoundingConfig(BaseModel):
     MAX_DAILY_DRAWDOWN_PCT: float = 0.05   # 5.0% daily circuit breaker
     DEFAULT_LEVERAGE: int = 5              # 5x isolated leverage baseline
     MAX_LEVERAGE: int = 7                  # Cap for low-volatility isolated margin
-    MIN_REWARD_TO_RISK: float = 2.5        # 1:2.5 minimum R:R ratio
+    MIN_REWARD_TO_RISK: float = 1.2        # Calibrated for high-probability scale-outs (70% @ 1.0R, 30% @ 2.2R)
 
-    # Capital Cushion & Position Allocation Engine
-    CUSHION_PCT: float = float(os.getenv("CUSHION_PCT", "0.25"))  # 25% cash cushion preserved
-    MAX_MARGIN_PER_POSITION_PCT: float = float(os.getenv("MAX_MARGIN_PER_POSITION_PCT", "0.375"))  # 37.5% margin per trade (75% / 2)
+    # Capital Cushion & Position Allocation Engine (90% allocated to max 2 positions, 10% cushion)
+    CUSHION_PCT: float = float(os.getenv("CUSHION_PCT", "0.10"))  # 10% cash cushion preserved
+    MAX_MARGIN_PER_POSITION_PCT: float = float(os.getenv("MAX_MARGIN_PER_POSITION_PCT", "0.45"))  # 45% margin per trade (90% / 2)
 
     # Hybrid Dynamic Leverage Engine: Volatility & Asset-Specific Tiers
     VOLATILITY_LEVERAGE_MAP: Dict[str, int] = {
@@ -148,7 +169,7 @@ class SystemConfig(BaseModel):
 class QuantConfig(BaseModel):
     # Configurable Alpha threshold (empirically tested across 0.30, 0.40, 0.45, 0.50, 0.60)
     ALPHA_THRESHOLD: float = float(os.getenv("QUANT_ALPHA_THRESHOLD", "0.45"))
-    MIN_REWARD_TO_RISK: float = 2.5
+    MIN_REWARD_TO_RISK: float = 1.2
     
     # Dual-Pillar Factor Family Weights (Normalized to sum to 1.0)
     WEIGHT_MOMENTUM: float = 0.30        # Multi-window rate of change (ROC 5/10/20/30)
@@ -196,4 +217,7 @@ compounding_config = CompoundingConfig()
 system_config = SystemConfig()
 quant_config = QuantConfig()
 mtf_config = MTFConfig()
+staleness_config = StalenessConfig()
+research_lab_config = ResearchLabConfig()
+
 

@@ -840,14 +840,34 @@ class QuantAnalystAgent:
             risk_dist = stop_info["risk_dist"]
             stop_type = stop_info["stop_type"]
 
+            # Check if fine-tuned quant parameters exist
+            tp1_mult = 1.0
+            tp2_mult = 2.2
+            scale_pct = 0.70
+            min_tp_pct = 0.0018
+            best_params_path = os.path.join(os.path.dirname(__file__), "..", "data", "best_quant_params.json")
+            if os.path.exists(best_params_path):
+                try:
+                    with open(best_params_path, "r", encoding="utf-8") as f:
+                        opt = json.load(f)
+                        p = opt.get("parameters", {})
+                        tp1_mult = p.get("tp1_mult", tp1_mult)
+                        tp2_mult = p.get("tp2_mult", tp2_mult)
+                        scale_pct = p.get("scale_pct", scale_pct)
+                        min_tp_pct = p.get("min_tp_pct", min_tp_pct)
+                except Exception:
+                    pass
+
+            target_tp1_dist = max(tp1_mult * risk_dist, entry_price * min_tp_pct)
             if signal == "BUY":
-                take_profit_1 = round(entry_price + (2.5 * risk_dist), 2)
-                take_profit_2 = round(entry_price + (4.0 * risk_dist), 2)
-                rr_ratio = round((take_profit_1 - entry_price) / max(risk_dist, 1e-4), 2)
+                take_profit_1 = round(entry_price + target_tp1_dist, 2)
+                take_profit_2 = round(entry_price + (tp2_mult * risk_dist), 2)
+                # Blended R:R with scale-out at TP1 and runner at TP2
+                rr_ratio = round((scale_pct * (target_tp1_dist / risk_dist)) + ((1.0 - scale_pct) * tp2_mult), 2)
             else:
-                take_profit_1 = round(entry_price - (2.5 * risk_dist), 2)
-                take_profit_2 = round(entry_price - (4.0 * risk_dist), 2)
-                rr_ratio = round((entry_price - take_profit_1) / max(risk_dist, 1e-4), 2)
+                take_profit_1 = round(entry_price - target_tp1_dist, 2)
+                take_profit_2 = round(entry_price - (tp2_mult * risk_dist), 2)
+                rr_ratio = round((scale_pct * (target_tp1_dist / risk_dist)) + ((1.0 - scale_pct) * tp2_mult), 2)
         else:
             stop_loss = 0.0
             take_profit_1 = 0.0

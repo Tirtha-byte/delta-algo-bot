@@ -150,11 +150,11 @@ class TestTradingSystem(unittest.TestCase):
         
         # Max risk budget on $60 is $1.50
         self.assertLessEqual(res["risk_budget_usd"], 1.55)
-        # Margin required must not exceed 37.5% per position ($22.50 on $60)
+        # Margin required must not exceed 45% per position ($27.00 on $60)
         self.assertLessEqual(res["margin_required"], 60.0 * compounding_config.MAX_MARGIN_PER_POSITION_PCT)
-        # Cushion reserve must equal 25% of account ($15.00 on $60)
-        self.assertEqual(res["cushion_reserve_usd"], 15.0)
-        self.assertEqual(res["cushion_pct"], 25.0)
+        # Cushion reserve must equal 10% of account ($6.00 on $60)
+        self.assertEqual(res["cushion_reserve_usd"], 6.0)
+        self.assertEqual(res["cushion_pct"], 10.0)
         # NVDA is high-volatility tier -> 4x
         self.assertEqual(res["isolated_leverage"], 4)
 
@@ -172,8 +172,8 @@ class TestTradingSystem(unittest.TestCase):
         }, current_balance=60.0)
         self.assertEqual(amzn_res["isolated_leverage"], 5)
 
-    def test_25_pct_cushion_and_75_pct_allocation(self):
-        """Verify exactly 25% balance is held as cushion and rest is divided between 2 trades (37.5% margin each)."""
+    def test_10_pct_cushion_and_90_pct_allocation(self):
+        """Verify exactly 10% balance is held as cushion and rest is divided between 2 trades (45.0% margin each)."""
         balance = 60.0
         # Trade 1: ETHUSD
         prop_eth = {
@@ -182,9 +182,9 @@ class TestTradingSystem(unittest.TestCase):
         }
         res_eth = risk_governor_agent.evaluate_proposal(prop_eth, current_balance=balance)
         self.assertTrue(res_eth["approved"])
-        self.assertEqual(res_eth["cushion_reserve_usd"], balance * 0.25)
-        self.assertEqual(res_eth["max_margin_budget_usd"], balance * 0.375)
-        self.assertLessEqual(res_eth["margin_required"], balance * 0.375)
+        self.assertEqual(res_eth["cushion_reserve_usd"], balance * 0.10)
+        self.assertEqual(res_eth["max_margin_budget_usd"], balance * 0.45)
+        self.assertLessEqual(res_eth["margin_required"], balance * 0.45)
 
         # Trade 2: NVDAXUSD
         prop_nvda = {
@@ -193,13 +193,13 @@ class TestTradingSystem(unittest.TestCase):
         }
         res_nvda = risk_governor_agent.evaluate_proposal(prop_nvda, current_balance=balance)
         self.assertTrue(res_nvda["approved"])
-        self.assertLessEqual(res_nvda["margin_required"], balance * 0.375)
+        self.assertLessEqual(res_nvda["margin_required"], balance * 0.45)
 
-        # Combined two trades: Total margin must not exceed 75% ($45.00), leaving >= 25% ($15.00) free cushion
+        # Combined two trades: Total margin must not exceed 90% ($54.00), leaving >= 10% ($6.00) free cushion
         total_margin = res_eth["margin_required"] + res_nvda["margin_required"]
-        self.assertLessEqual(total_margin, balance * 0.75)
+        self.assertLessEqual(total_margin, balance * 0.90)
         remaining_free_cushion = balance - total_margin
-        self.assertGreaterEqual(remaining_free_cushion, balance * 0.25)
+        self.assertGreaterEqual(remaining_free_cushion, balance * 0.10)
 
     def test_shadow_account_bracket_and_trailing_stop(self):
         """Verify Shadow Account opens position and moves stop to breakeven once TP1 is reached."""

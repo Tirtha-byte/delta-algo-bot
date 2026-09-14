@@ -523,10 +523,64 @@ function renderForensicMemory(mem) {
 }
 
 // Initial boot
+async function fetchResearchStatus() {
+  try {
+    const res = await fetch("/api/research/status");
+    const data = await res.json();
+    renderResearchStatus(data);
+  } catch (err) {
+    console.error("[Research] Error fetching research status:", err);
+  }
+}
+
+async function fetchReconciliationStatus() {
+  try {
+    const res = await fetch("/api/reconciliation");
+    const data = await res.json();
+    const badge = document.getElementById("reconciliationBadge");
+    if (badge) {
+      if (data.is_halted) {
+        badge.textContent = "HALTED: " + (data.halt_reason || "Mismatch");
+        badge.className = "stat-value text-rose";
+      } else {
+        badge.textContent = "HEALTHY (Synchronized)";
+        badge.className = "stat-value text-emerald";
+      }
+    }
+  } catch (err) {
+    console.error("[Reconciliation] Error fetching reconciliation status:", err);
+  }
+}
+
+function renderResearchStatus(data) {
+  if (!data) return;
+  const countEl = document.getElementById("labCycleCount");
+  if (countEl) countEl.textContent = data.cycle_count || 0;
+
+  const msgEl = document.getElementById("labStatusMsg");
+  if (msgEl && data.status_message) msgEl.textContent = data.status_message;
+
+  const topCandEl = document.getElementById("topCandidateDetails");
+  if (topCandEl) {
+    const cand = data.top_candidate;
+    if (cand) {
+      topCandEl.innerHTML = `
+        <div><b>ID:</b> <span style="color:#38bdf8;">${cand.candidate_id || "CAND_1"}</span> | <b>Score:</b> <span style="color:#10b981;">${cand.composite_score || 0}/100</span></div>
+        <div><b>OOS Profit Factor:</b> ${cand.oos_profit_factor || 0} | <b>WFE:</b> ${cand.wfe_ratio || 0} | <b>Win Rate:</b> ${cand.win_rate || 0}%</div>
+        <div style="color:#94a3b8; font-size:11px;">Params: ${JSON.stringify(cand.parameter_set || {})}</div>
+      `;
+    }
+  }
+}
+
 window.addEventListener("DOMContentLoaded", () => {
   initWebSocket();
   fetchTickers();
   fetchForensicMemory();
+  fetchResearchStatus();
+  fetchReconciliationStatus();
   setInterval(fetchTickers, 15000);
   setInterval(fetchForensicMemory, 15000);
+  setInterval(fetchResearchStatus, 15000);
+  setInterval(fetchReconciliationStatus, 15000);
 });

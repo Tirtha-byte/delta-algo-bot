@@ -4,6 +4,9 @@ import time
 import requests
 from typing import Optional, Dict, Any, List
 
+from dotenv import load_dotenv
+load_dotenv(override=True)
+
 class TelegramNotifier:
     """
     Sends automated real-time trade signals, milestone progress,
@@ -12,10 +15,14 @@ class TelegramNotifier:
     Guaranteed to ONLY send verified real events.
     """
     def __init__(self):
-        self.bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "")
-        self.chat_id = os.getenv("TELEGRAM_CHAT_ID", "")
+        self.reload_credentials()
         self._candidate_rejection_history: Dict[str, float] = {}
         self._last_digest_time: float = 0.0
+
+    def reload_credentials(self):
+        load_dotenv(override=True)
+        self.bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "")
+        self.chat_id = os.getenv("TELEGRAM_CHAT_ID", "")
 
     def is_test_environment(self) -> bool:
         """Prevent automated tests from ever sending fake/mock alerts to user's phone."""
@@ -23,11 +30,13 @@ class TelegramNotifier:
             return True
         if "unittest" in sys.modules:
             for arg in sys.argv:
-                if "unittest" in arg.lower() or "test" in arg.lower():
+                if "unittest" in arg.lower():
                     return True
         return False
 
     def is_enabled(self) -> bool:
+        if not self.bot_token or not self.chat_id:
+            self.reload_credentials()
         return bool(self.bot_token and self.chat_id and not self.is_test_environment())
 
     def send_message(self, text: str) -> bool:

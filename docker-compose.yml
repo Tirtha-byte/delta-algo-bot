@@ -11,12 +11,14 @@ services:
       - .env
     volumes:
       - ./agents:/app/agents
-      - ./web:/app/web
       - ./data:/app/data
+      - ./execution:/app/execution
+      - ./research:/app/research
+      - ./web:/app/web
+      - ./tests:/app/tests
       - ./config.py:/app/config.py
       - ./delta_client.py:/app/delta_client.py
       - ./server.py:/app/server.py
-      - ./tests:/app/tests
       - ./run.py:/app/run.py
     environment:
       - PYTHONUNBUFFERED=1

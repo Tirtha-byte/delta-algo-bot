@@ -368,4 +368,29 @@ class DeltaClient:
         except Exception as e:
             return {"error": str(e), "success": False}
 
+    def get_wallet_balances(self) -> Dict[str, Any]:
+        """Fetch user wallet balances from Delta Exchange."""
+        if not self.api_key or not self.api_secret:
+            return {"error": "API credentials missing", "success": False, "result": []}
+        path = "/v2/wallet/balances"
+        headers = self._get_auth_headers("GET", path)
+        try:
+            resp = self.session.get(f"{self.base_url}{path}", headers=headers, timeout=self.timeout)
+            if resp.status_code == 200:
+                return {"result": resp.json().get("result", []), "success": True}
+            return {"error": resp.text, "status_code": resp.status_code, "success": False, "result": []}
+        except Exception as e:
+            return {"error": str(e), "success": False, "result": []}
+
+    def get_balance(self) -> Dict[str, Any]:
+        """Convenience method returning aggregated USD/USDT wallet balance."""
+        wallets = self.get_wallet_balances()
+        total = 0.0
+        if wallets.get("success"):
+            for b in wallets.get("result", []):
+                bal = float(b.get("balance", 0.0))
+                if b.get("asset_symbol") in ("USD", "USDT") and bal > 0:
+                    total += bal
+        return {"balance": round(total, 2), "success": wallets.get("success", False)}
+
 delta_client = DeltaClient()

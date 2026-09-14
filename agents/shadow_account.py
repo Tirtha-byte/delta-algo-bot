@@ -126,7 +126,8 @@ class ShadowAccountEngine:
                     pos["sl_at_breakeven"] = True
                 # Check Stop Loss
                 if mark <= pos["stop_loss"]:
-                    to_close.append((pos_id, mark, "STOP_LOSS" if not pos["sl_at_breakeven"] else "BREAKEVEN_STOP"))
+                    exit_p = pos["stop_loss"] if pos["sl_at_breakeven"] else mark
+                    to_close.append((pos_id, exit_p, "STOP_LOSS" if not pos["sl_at_breakeven"] else "BREAKEVEN_STOP"))
                 # Check Take Profit 2
                 elif mark >= pos["take_profit_2"]:
                     to_close.append((pos_id, mark, "TAKE_PROFIT_2"))
@@ -136,7 +137,8 @@ class ShadowAccountEngine:
                     pos["stop_loss"] = pos["entry_price"]
                     pos["sl_at_breakeven"] = True
                 if mark >= pos["stop_loss"]:
-                    to_close.append((pos_id, mark, "STOP_LOSS" if not pos["sl_at_breakeven"] else "BREAKEVEN_STOP"))
+                    exit_p = pos["stop_loss"] if pos["sl_at_breakeven"] else mark
+                    to_close.append((pos_id, exit_p, "STOP_LOSS" if not pos["sl_at_breakeven"] else "BREAKEVEN_STOP"))
                 elif mark <= pos["take_profit_2"]:
                     to_close.append((pos_id, mark, "TAKE_PROFIT_2"))
 
