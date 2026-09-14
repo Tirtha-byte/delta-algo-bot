@@ -282,16 +282,12 @@ class MarketDataEngine:
                 backoff = min(staleness_config.RECONNECT_BACKOFF_MAX_SEC, backoff * 1.5)
 
     async def _subscribe(self, ws):
-        # Subscribe in batches or grouped channels
-        # Primary channels: ob_l1, ob_l2, ob_updates, trades, ticker, mark_price, system_status
+        # Subscribe to Delta Exchange official WebSocket channels
         channels = [
             {"name": "system_status", "symbols": ["all"]},
-            {"name": "ob_l1", "symbols": self.symbols},
-            {"name": "ob_l2", "symbols": self.symbols[:10]},      # L2 depth for active tier
-            {"name": "ob_updates", "symbols": self.symbols[:5]},   # Full book updates for primary assets
-            {"name": "trades", "symbols": self.symbols},
+            {"name": "l2_orderbook", "symbols": self.symbols[:10]},
             {"name": "ticker", "symbols": self.symbols},
-            {"name": "mark_price", "symbols": self.symbols}
+            {"name": "all_trades", "symbols": self.symbols[:10]}
         ]
         sub_msg = {"type": "subscribe", "payload": {"channels": channels}}
         await ws.send(json.dumps(sub_msg))
@@ -318,54 +314,35 @@ class MarketDataEngine:
 
         if msg_type == "system_status":
             status = msg.get("status", "unknown")
-            is_maint = msg.get("maintenance_announcement_time") is not None
+            is_maint = bool(msg.get("maintenance_announcement_time"))
             staleness_breaker.record_system_status(status, is_maint)
 
-        elif msg_type == "ob_l1":
-            sym = msg.get("sy")
+        elif msg_type == "l2_orderbook":
+            sym = msg.get("symbol") or msg.get("sy")
             if sym and sym in self.books:
-                try:
-                    bp = float(msg.get("bp", 0.0))
-                    bs = float(msg.get("bs", 0.0))
-                    ap = float(msg.get("ap", 0.0))
-                    as_ = float(msg.get("as", 0.0))
-                    ts = msg.get("ts")
-                    self.books[sym].update_l1(bp, bs, ap, as_, ts)
-                except Exception:
-                    pass
-
-        elif msg_type == "ob_l2":
-            sym = msg.get("sy")
-            if sym and sym in self.books:
-                bids = msg.get("b", [])
-                asks = msg.get("a", [])
-                ts = msg.get("ts")
+                buys = msg.get("buy", [])
+                sells = msg.get("sell", [])
+                bp = float(buys[0]["limit_price"]) if buys else 0.0
+                bs = float(buys[0]["size"]) if buys else 0.0
+                ap = float(sells[0]["limit_price"]) if sells else 0.0
+                as_ = float(sells[0]["size"]) if sells else 0.0
+                ts = msg.get("timestamp") or msg.get("ts")
+                self.books[sym].update_l1(bp, bs, ap, as_, ts)
+                bids = [[float(x["limit_price"]), float(x["size"])] for x in buys]
+                asks = [[float(x["limit_price"]), float(x["size"])] for x in sells]
                 self.books[sym].apply_l2_snapshot(bids, asks, ts)
+                staleness_breaker.record_l1(sym, ts)
+                staleness_breaker.record_l2(sym, ts)
 
-        elif msg_type == "ob_updates":
-            sym = msg.get("sy")
-            if sym and sym in self.books:
-                action = msg.get("action")
-                bids = msg.get("b", [])
-                asks = msg.get("a", [])
-                seq = msg.get("seq", 0)
-                cs = msg.get("cs")
-                ts = msg.get("ts")
-                if action == "snapshot":
-                    self.books[sym].apply_l2_snapshot(bids, asks, ts)
-                    self.books[sym].last_seq = seq
-                elif action == "update":
-                    self.books[sym].apply_incremental_update(bids, asks, seq, cs, ts)
-
-        elif msg_type == "trades":
-            sym = msg.get("sy")
+        elif msg_type in ("all_trades", "trades"):
+            sym = msg.get("symbol") or msg.get("sy")
             if sym and sym in self.trades:
                 try:
-                    price = float(msg.get("p", 0.0))
-                    size = float(msg.get("s", 0.0))
-                    role = msg.get("r", "m")  # 't' = taker (aggressive buyer), 'm' = maker (aggressive seller)
-                    ts = msg.get("t") or msg.get("ts")
-                    is_buyer_taker = (role == "t")
+                    price = float(msg.get("p") or msg.get("price", 0.0))
+                    size = float(msg.get("s") or msg.get("size", 0.0))
+                    role = msg.get("buyer_role") or msg.get("r", "m")
+                    ts = msg.get("timestamp") or msg.get("t") or msg.get("ts")
+                    is_buyer_taker = (role in ("t", "taker"))
                     trade_record = {
                         "symbol": sym,
                         "price": price,

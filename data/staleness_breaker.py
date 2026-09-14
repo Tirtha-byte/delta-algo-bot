@@ -162,6 +162,17 @@ class MarketDataStalenessBreaker:
 
         h = self.symbol_health.get(symbol)
         if not h or h.last_any_time == 0.0:
+            try:
+                from delta_client import delta_client
+                tk = delta_client.get_ticker(symbol)
+                if tk.get("mark_price", 0) > 0:
+                    self.record_l1(symbol)
+                    self.record_mark_price(symbol)
+                    h = self._get_or_create(symbol)
+            except Exception:
+                pass
+
+        if not h or h.last_any_time == 0.0:
             return {
                 "symbol": symbol,
                 "can_trade": False,

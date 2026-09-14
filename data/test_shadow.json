@@ -449,6 +449,20 @@
       "opened_at": "2026-09-14T08:22:01.167593+00:00",
       "closed_at": "2026-09-14T08:22:01.168814+00:00",
       "balance_after": 60.0
+    },
+    {
+      "id": "6ec3c902",
+      "symbol": "NVDAXUSD",
+      "side": "BUY",
+      "contracts": 10,
+      "entry_price": 220.0,
+      "exit_price": 220.0,
+      "realized_pnl": 0.0,
+      "return_pct": 0.0,
+      "close_reason": "BREAKEVEN_STOP",
+      "opened_at": "2026-09-14T08:45:35.189940+00:00",
+      "closed_at": "2026-09-14T08:45:35.190937+00:00",
+      "balance_after": 60.0
     }
   ],
   "open_positions": {},
@@ -583,6 +597,10 @@
     },
     {
       "timestamp": "2026-09-14T08:22:01.168814+00:00",
+      "balance": 60.0
+    },
+    {
+      "timestamp": "2026-09-14T08:45:35.190937+00:00",
       "balance": 60.0
     }
   ]

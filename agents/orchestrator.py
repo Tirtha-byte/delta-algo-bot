@@ -430,17 +430,20 @@ class TeamOrchestrator:
             from agents.shadow_account import shadow_account
             current_balance = shadow_account.balance
 
-        # Rotating scan window of 3 symbols per cycle to avoid rate limits
-        universe = system_config.US_STOCKS_RWA
-        batch_size = 3
-        if not universe:
-            universe = ["BTCUSD", "ETHUSD"]
+        # Active candidate selection: During non-US market hours, ALWAYS prioritize 24/7 liquid crypto
+        session_info = session_momentum_engine.get_current_session()
+        is_us_open = session_info.get("is_us_cash_open", False)
 
-        selected_symbols = []
-        for i in range(batch_size):
-            idx = (self.scan_cursor + i) % len(universe)
-            selected_symbols.append(universe[idx])
-        self.scan_cursor = (self.scan_cursor + batch_size) % len(universe)
+        universe = system_config.US_STOCKS_RWA or ["BTCUSD", "ETHUSD"]
+        if not is_us_open:
+            crypto_symbols = ["BTCUSD", "ETHUSD"]
+            rotating = [universe[(self.scan_cursor + i) % len(universe)] for i in range(2)]
+            self.scan_cursor = (self.scan_cursor + 2) % len(universe)
+            selected_symbols = list(dict.fromkeys(crypto_symbols + rotating))
+        else:
+            batch_size = 4
+            selected_symbols = [universe[(self.scan_cursor + i) % len(universe)] for i in range(batch_size)]
+            self.scan_cursor = (self.scan_cursor + batch_size) % len(universe)
 
         for sym in selected_symbols:
             res = self.run_cycle_for_symbol(sym, current_balance)

@@ -8,9 +8,9 @@ load_dotenv()
 class DeltaConfig(BaseModel):
     # Delta Exchange India (api.india.delta.exchange) or Delta Global (api.delta.exchange)
     BASE_URL: str = os.getenv("DELTA_BASE_URL", "https://api.india.delta.exchange")
-    PUBLIC_WS_URL: str = os.getenv("DELTA_PUBLIC_WS_URL", "wss://public-socket.india.delta.exchange")
+    PUBLIC_WS_URL: str = os.getenv("DELTA_PUBLIC_WS_URL", "wss://socket.india.delta.exchange")
     PRIVATE_WS_URL: str = os.getenv("DELTA_PRIVATE_WS_URL", "wss://socket.india.delta.exchange")
-    WS_URL: str = os.getenv("DELTA_WS_URL", "wss://public-socket.india.delta.exchange")
+    WS_URL: str = os.getenv("DELTA_WS_URL", "wss://socket.india.delta.exchange")
     API_KEY: str = os.getenv("DELTA_API_KEY", "")
     API_SECRET: str = os.getenv("DELTA_API_SECRET", "")
     REQUEST_TIMEOUT: int = 10
